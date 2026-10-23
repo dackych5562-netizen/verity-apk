@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -75,11 +78,13 @@ jobs:
           name: Verity-apk
           path: dist/*.apk
 
-      - name: Report errors as annotations
-        if: failure()
+      - name: Push logs to logs branch
+        if: always()
         run: |
-          for f in sdk.log build.log; do
-            [ -f $f ] || continue
-            tail -n 60 $f | sed 's/%/%25/g' | while IFS= read -r l; do echo "::warning title=$f::$l"; done
-          done
-          find $HOME/renpy/rapt -maxdepth 2 | head -40 | while read l; do echo "::notice title=tree::$l"; done
+          mkdir -p /tmp/logs && cp sdk.log build.log /tmp/logs/ 2>/dev/null || true
+          find $HOME/renpy/rapt -maxdepth 3 > /tmp/logs/tree.txt 2>/dev/null || true
+          find $HOME/.renpy $HOME/renpy -name "*.txt" -path "*log*" -newer .android.json -exec cp {} /tmp/logs/ \; 2>/dev/null || true
+          cp $HOME/renpy/tmp/*.txt /tmp/logs/ 2>/dev/null || true
+          cd /tmp/logs && git init -q -b logs && git add -A
+          git -c user.name=ci -c user.email=ci@example.com commit -qm "logs $GITHUB_RUN_ID"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" logs
