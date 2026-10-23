@@ -1,0 +1,20 @@
+ANDROID_HOME=/usr/local/lib/android/sdk
+build-tools
+cmake
+cmdline-tools
+extras
+licenses
+ndk
+packages-list.txt
+platform-tools
+platforms
+android.py
+blocklist.txt
+buildlib
+bundletool.jar
+hash.txt
+keeplist.txt
+prototype
+templates
+update_translations.py
+yes: standard output: Broken pipe
