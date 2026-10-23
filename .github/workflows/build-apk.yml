@@ -48,7 +48,7 @@ jobs:
       - name: Create signing keys
         run: |
           mkdir -p project
-          cp -r game .android.json project/
+          cp -r game .android.json android-icon_foreground.png android-icon_background.png android-presplash.jpg project/
           for k in android bundle; do
             keytool -genkey -v -keystore project/$k.keystore -alias android \
               -keyalg RSA -keysize 2048 -validity 20000 \
