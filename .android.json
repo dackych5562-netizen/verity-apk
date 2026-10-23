@@ -4,7 +4,7 @@
   "package": "com.verity.vn",
   "version": "1.0",
   "numeric_version": 1,
-  "orientation": "sensor-landscape",
+  "orientation": "sensorLandscape",
   "permissions": [],
   "store": "none",
   "heap_size": "3",
