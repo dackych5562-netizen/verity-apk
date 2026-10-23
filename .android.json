@@ -1,0 +1,14 @@
+{
+  "name": "Verity",
+  "icon_name": "Verity",
+  "package": "com.verity.vn",
+  "version": "1.0",
+  "numeric_version": 1,
+  "orientation": "sensor-landscape",
+  "permissions": [],
+  "store": "none",
+  "heap_size": "3",
+  "update_always": true,
+  "update_icons": true,
+  "update_keystores": true
+}

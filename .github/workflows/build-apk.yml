@@ -1,0 +1,68 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      RENPY_VERSION: 8.5.3
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Download Ren'Py SDK and Android tools (RAPT)
+        run: |
+          cd $HOME
+          wget -q https://www.renpy.org/dl/$RENPY_VERSION/renpy-$RENPY_VERSION-sdk.tar.bz2
+          tar xjf renpy-$RENPY_VERSION-sdk.tar.bz2
+          mv renpy-$RENPY_VERSION-sdk renpy
+          wget -q https://www.renpy.org/dl/$RENPY_VERSION/renpy-$RENPY_VERSION-rapt.zip
+          unzip -q renpy-$RENPY_VERSION-rapt.zip -d renpy
+          ls renpy renpy/rapt
+
+      - name: Point RAPT at the runner's Android SDK
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
+          ln -s $ANDROID_HOME $HOME/renpy/rapt/Sdk
+          echo "sdk.dir=$ANDROID_HOME" > $HOME/renpy/rapt/project/local.properties
+          cat $HOME/renpy/rapt/project/local.properties
+
+      - name: Create signing keys
+        run: |
+          mkdir -p project
+          cp -r game .android.json project/
+          for k in android bundle; do
+            keytool -genkey -v -keystore project/$k.keystore -alias android \
+              -keyalg RSA -keysize 2048 -validity 20000 \
+              -storepass android -keypass android \
+              -dname "CN=Verity, O=Verity, C=UA"
+          done
+          printf 'key.alias=android\nkey.store.password=android\nkey.alias.password=android\nkey.store=%s\n' "$PWD/project/android.keystore" >> $HOME/renpy/rapt/project/local.properties
+          printf 'key.alias=android\nkey.store.password=android\nkey.alias.password=android\nkey.store=%s\n' "$PWD/project/bundle.keystore" > $HOME/renpy/rapt/project/bundle.properties
+
+      - name: Build APK
+        run: |
+          cd $HOME/renpy
+          ./renpy.sh launcher android_build "$GITHUB_WORKSPACE/project" --destination "$GITHUB_WORKSPACE/out"
+          ls -la "$GITHUB_WORKSPACE/out" || true
+          find $HOME/renpy/rapt -name "*.apk" -newer "$GITHUB_WORKSPACE/.android.json" || true
+
+      - name: Collect APK
+        run: |
+          mkdir -p dist
+          find "$GITHUB_WORKSPACE/out" $HOME/renpy/rapt -name "*.apk" -exec cp {} dist/ \; || true
+          ls -la dist
+          test -n "$(ls dist/*.apk 2>/dev/null)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Verity-apk
+          path: dist/*.apk
