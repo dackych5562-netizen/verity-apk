@@ -69,7 +69,7 @@ jobs:
       - name: Collect APK
         run: |
           mkdir -p dist
-          find "$GITHUB_WORKSPACE/out" $HOME/renpy/rapt -name "*.apk" -exec cp {} dist/ \; || true
+          find "$GITHUB_WORKSPACE/out" -name "*.apk" -exec cp {} dist/ \;
           ls -la dist
           test -n "$(ls dist/*.apk 2>/dev/null)"
 
@@ -77,6 +77,13 @@ jobs:
         with:
           name: Verity-apk
           path: dist/*.apk
+
+      - name: Publish APK as a release download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest dist/*.apk --title "Verity for Android" --notes "Tap the .apk file below to download it to your phone."
 
       - name: Push logs to logs branch
         if: always()
